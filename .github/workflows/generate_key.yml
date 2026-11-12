@@ -1,1 +1,46 @@
+name: 1. Tao Khoa Ky (Chay 1 Lan)
 
+on:
+  workflow_dispatch:
+    inputs:
+      password:
+        description: 'Nhap mat khau cho Keystore (it nhat 6 ky tu)'
+        required: true
+        default: '123456'
+      alias:
+        description: 'Ten Alias cua khoa'
+        required: true
+        default: 'my-key-alias'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Generate Keystore
+        run: |
+          keytool -genkey -v \
+            -keystore release-key.jks \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -alias "${{ github.event.inputs.alias }}" \
+            -storepass "${{ github.event.inputs.password }}" \
+            -keypass "${{ github.event.inputs.password }}" \
+            -dname "CN=Android, OU=Dev, O=App, L=City, S=State, C=VN"
+
+      - name: Export Base64
+        run: |
+          echo "=== COPY CHUOI BEN DUOI DE LUU VAO SECRET KEYSTORE_BASE64 ==="
+          base64 -w 0 release-key.jks
+          echo ""
+          echo "=============================================================="
+
+      - name: Upload Keystore Backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-release-key-jks
+          path: release-key.jks
